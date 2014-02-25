@@ -1,6 +1,6 @@
 #card implementation
 class credit_card(object):
-    def __init__(self, credit_card_company, last4digits, expiration_date, bank, annual_interest_rate, credit_limit, min_monthly_payment_rate, balance = 0, rewards = None):
+    def __init__(self, credit_card_company, last4digits, expiration_date, bank, annual_interest_rate, credit_limit, min_monthly_payment_rate, balance = 0, rewards = None, points = None, cash_back = None):
         self.credit_card_company = credit_card_company
         self.last4digits = last4digits
         self.expiration_date = expiration_date
@@ -10,31 +10,44 @@ class credit_card(object):
         self.balance = balance
         self.credit_limit = credit_limit
         self.min_monthly_payment_rate = min_monthly_payment_rate
-        self.rewards = rewards  
+        self.rewards = rewards 
 
+
+
+        
+    '''
     def __str__(self):
-        return str(self.credit_card_company) +" "+ str(self.last4digits) +" "+  str(self.expiration_date) + "\n" +  self.card_expiration_reminder()
+        return self.credit_card_company +" "+ self.last4digits +" "+  self.expiration_date
+    '''
+
     def get_credit_card_company(self):
         return self.credit_card_company 
     
-    def update_credit_card_company(self)
+    def update_credit_card_company(self, updated_credit_company):
+        self.credit_card_company = updated_credit_company
     
-    def get_min_monthly_payment(self):
-        return 1.0*self.min_monthly_payment_rate*self.balance
+    def get_last4digits(self):
+        return self.last4digits 
+    
+    def update_last4digits(self, updated_last4digits):
+        self.last4digits = updated_last4digits
 
-    def get_credit_card(self):
-        return self.credit_card_company
-    
-    def get_bank(self):
-        return self.bank
-    def update_bank(self, new_bank):
-        self.bank = new_bank
-        
     def get_expiration_date(self, new_expiration_date):
         return self.expiration_date     
+    
     def update_expiration_date(self, new_expiration_date):
-        self.expiration_date = new_expiration_date   
-            
+        self.expiration_date = new_expiration_date       
+
+    def get_bank(self):
+        return self.ban
+    def update_bank(self, new_bank):
+        self.bank = new_bank
+
+    def get_min_monthly_payment(self):
+        return 1.0*self.min_monthly_payment_rate*self.balance
+    def update_min_monthly_payment(self, new_min_monthly_payment):
+        self.min_monthly_payment = new_min_monthly_payment
+               
     def get_annual_interest_rate(self):
         return self.annual_interest_rate
     def update_annual_interest_rate(self, new_annual_interest_rate):
@@ -62,6 +75,66 @@ class credit_card(object):
             self.update_balance(self.balance*(1+self.monthly_interest_rate))
         return round(self.balance, 2)
     
+    def get_credit_limit(self):
+        return self.credit_limit
+    def update_credit_limit(self, new_limit):
+        self.credit_limit = new_limit    
+
+    def get_min_monthly_payment_rate(self):
+        return self.min_monthly_payment_rate
+    def update_min_monthly_payment_rate(self, new_monthly_payment_rate):
+        self.min_monthly_payment_rate = new_monthly_payment_rate
+        
+    def card_expiration_reminder(self):
+        reminder = "Reminder: Your card expires this year."
+        expiration_year = self.expiration_date[-2]+self.expiration_date[-1]
+        if expiration_year == "14": return reminder
+        else: return ""
+
+    def get_card_rewards(self):
+        return self.rewards
+    def update_card_rewards(self, new_rewards):
+        self.rewards = new_rewards
+    
+    def get_card_info(self):
+        print
+        print "credit card = " + self.credit_card_company
+        print "last 4 Digits = " +self.last4digits
+        print "expiration Date = " +self.expiration_date 
+        print
+    
+    def get_dollar_credit_used(self): 
+        return str(round(self.balance, 2)) 
+    def get_percent_credit_used(self): 
+        return str(round(100.*(1.0*self.balance / self.credit_limit), 2))
+    def get_decimal_credit_used(self):
+        return str(round((1.*self.balance / self.credit_limit), 2))
+    def get_fractional_credit_used(self): 
+        return str(round(self.balance, 2)) + "/" + str(round(self.credit_limit, 2))
+    
+    def get_dollar_credit_remaining(self): 
+        return str(round(self.credit_limit - self.balance, 2))
+    def get_percent_credit_remaining(self): 
+        return str(round(100.*(1.*self.credit_limit - self.balance) / self.credit_limit, 2))
+    def get_decimal_credit_remaining(self):
+        return str(round(((1.*self.credit_limit - self.balance) / self.credit_limit), 2))
+    def get_fractional_credit_remaining(self): 
+        return str(round(1.*self.credit_limit - self.balance, 2)) + "/" + str(round(self.credit_limit, 2))
+
+    #update this function
+    def get_card_financial_report(self):
+        print
+        print "financial report for card ending in " + self.last4digits
+        print "credit used in dollars = $" + self.get_dollar_credit_used()
+        print "% of credit used = " + self.get_percent_credit_used() + "%"
+        print "decimal fraction of credit used = " +self.get_decimal_credit_used()
+        print "fraction of credit used = " + self.get_fractional_credit_used()
+        print "credit remaining in dollars = $" + self.get_dollar_credit_remaining()
+        print "% of credit credit remaining = " + self.get_percent_credit_remaining() + "%"
+        print "decimal fraction of credit remaining = " +self.get_decimal_credit_remaining()
+        print "fraction of credit remaining = " + self.get_fractional_credit_remaining()
+        print
+
     #allows a credit card holder to determine the balance after x_months of a fixed monthly_payment amount without applying the payment
     def get_theoretical_balance_after_x_payments(self, x_months = None, monthly_payments = None):
         if x_months == None: x_months = 1
@@ -85,62 +158,3 @@ class credit_card(object):
         num_years = num_months/12
         return str(num_years) + " years, " + str(num_months%12) + " months"
 
-    def get_credit_limit(self):
-        return self.credit_limit
-    def update_credit_limit(self, new_limit):
-        self.credit_limit = new_limit    
-    
-    def get_percent_credit_remaining(self):
-        return 1.*self.get_credit_remaining()/self.credit_limit
-    def get_percent_credit_used(self):
-        return 1.*self.balance/self.credit_limit 
-
-    def get_min_monthly_payment_rate(self):
-        return self.min_monthly_payment_rate
-    def update_min_monthly_payment_rate(self, new_monthly_payment_rate):
-        self.min_monthly_payment_rate = new_monthly_payment_rate
-        
-    def get_credit_remaining(self):
-        return round(self.credit_limit - self.balance, 2)
-    
-    def card_expiration_reminder(self):
-        reminder = "Reminder: Your card expires this year."
-        expiration_year = self.expiration_date[-2]+self.expiration_date[-1]
-        if expiration_year == "14": return reminder
-        else: return ""
-
-    def get_card_type(self):
-        return self.rewards
-
-    '''
-    #allows a credit card holder to determine the fixed monthly payment required to clear debts on this card
-    def get_required_fixed_payment_to_clear_debt_after_x_months(self, x_months = None, monthly_payment = None):
-        if x_months == None: x_months = 12
-        if monthly_payment == None: monthly_payment = self.get_min_monthly_payment()     
-        new_balance = self.balance
-        low = new_balance/12
-        high = (new_balance*(1+self.monthly_interest_rate)**12)/12.
-        monthly_payment = (high + low)/2.0
-        while self.get_theoretical_balance_after_x_payments(x_months, monthly_payment) != 0:
-            print self.get_theoretical_balance_after_x_payments(x_months, monthly_payment)
-            if self.get_theoretical_balance_after_x_payments(x_months, monthly_payment) > 0:
-                low = monthly_payment
-            else:
-                high = monthly_payment
-            monthly_payment = (high + low)/2.0        
-        return ("Lowest Payment:", round(monthly_payment,2))
-
-    #will calculate the number of months and years to pay off the remaining balance
-    def time_to_clear_debt_min_current_payment(self):
-        num_months = 0
-        num_months = 0
-        initial_min_payment = myvisa.get_min_monthly_payment()
-        while myvisa.get_balance()-initial_min_payment > 0:
-            myvisa.advance_x_months_payments()
-            print myvisa.get_balance()
-            print myvisa.get_credit_remaining()
-            num_months+=1
-        num_years = num_months/12
-        return str(num_years) + " years, " + str(num_months%12) + " months"
-    '''
-    

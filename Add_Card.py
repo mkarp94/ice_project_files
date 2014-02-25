@@ -1,7 +1,7 @@
 import random, os
 
 #TAKE USER INPUT AND RUN FUNCTION TO INSERT Credit Card into user account
-def AddCard():
+def add_card():
     os.system('cls' if os.name == 'nt' else 'clear')
     
     print """
@@ -89,5 +89,5 @@ def AddCard():
     credit_limit = None
     while credit_limit == None or credit_limit <= 0:
         credit_limit = raw_input("What is the credit limit on the card ending in " + str(Last4Digits) + ": ")
-        credit_limit   = float(credit_limit )
+        credit_limit   = float(credit_limit)
 #def __init__(self, credit_card_company, last4digits, expiration_date, bank, annual_interest_rate, credit_limit, min_monthly_payment_rate, balance = 0, rewards = None)
