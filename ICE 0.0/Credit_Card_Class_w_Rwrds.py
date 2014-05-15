@@ -1,8 +1,9 @@
-from Purchase_Class import purchase
+from Purchase_Class import *
 #card implementation
+
 class credit_card(object):
     def __init__(self, credit_card_company, last4digits, expiration_date, bank, 
-                annual_interest_rate, credit_limit, min_monthly_payment_rate, balance = 0, transactions = None,
+                annual_interest_rate, credit_limit, min_monthly_payment_rate, balance = 0, transactions = {},
                 rewards_type = None, rewards_points = None, rewards_points_base_rate = None, rewards_special_items_points_rates = {},
                 rewards_cash_back = None, rewards_cash_back_base_rate = None, rewards_special_items_cash_back_rates = {}):
         self.credit_card_company = credit_card_company #card issuing company
@@ -13,8 +14,7 @@ class credit_card(object):
         self.monthly_interest_rate = self.annual_interest_rate / 12.0 #monthly interest rate on a yearly compound model
         self.balance = balance #credit outstanding
         self.credit_limit = credit_limit #number to be determine by the bank
-        self.min_monthly_payment_rate = min_monthly_payment_rate #%of credit_balance due as a minimum payment each month
-        self.transactions = transactions        
+        self.min_monthly_payment_rate = min_monthly_payment_rate #%of credit_balance due as a minimum payment each month    
         self.rewards_type = rewards_type #Points, Cash and Cash & Points, None
         self.rewards_points = rewards_points #Points accumulate, initialized to none only set to 0 if "points" in self.rewards_type
         self.rewards_points_base_rate = rewards_points_base_rate #%of payment received in rewards for any non_special purchase initialized to 0
@@ -22,6 +22,7 @@ class credit_card(object):
         self.rewards_cash_back = rewards_cash_back
         self.rewards_cash_back_base_rate = rewards_cash_back_base_rate
         self.rewards_special_items_cash_back_rates = rewards_special_items_cash_back_rates
+
         
     '''
     def __str__(self):
@@ -150,11 +151,11 @@ class credit_card(object):
         projected_points = 0
         if purchase.tag in self.rewards_special_items_points_rates.keys():
             projected_points = round(self.rewards_special_items_points_rates[purchase.tag]*1.*purchase.get_purchase_price())
-            print "Projected Rewards from this purchase under the category " + purchase.tag + " " + str(projected_points)
+            #print "Projected Rewards from this purchase under the category " + purchase.tag + " " + str(projected_points)
             return projected_points
         else:
             projected_points = round(self.rewards_points_base_rate*1.*purchase.get_purchase_price())
-            print "Projected Rewards from this purchase under the category " + purchase.tag + " " + str(projected_points)
+            #print "Projected Rewards from this purchase under the category " + purchase.tag + " " + str(projected_points)
             return projected_points
     
     def theoretical_cash_back_from_purchase(self, purchase):
@@ -170,25 +171,23 @@ class credit_card(object):
        
     def theoretical_points_post_purchase(self, purchase):
         projected_points = self.theoretical_points_from_purchase(purchase)
-        print "Projected total points earned after making this purchase under the category " + purchase.tag + " :" + str(self.rewards_points + projected_points)
+        #print "Projected total points earned after making this purchase under the category " + purchase.tag + " :" + str(self.rewards_points + projected_points)
         return self.rewards_points + projected_points
 
     def theoretical_cash_back_post_purchase(self, purchase):
         projected_cash_back = self.theoretical_cash_back_from_purchase(purchase)
         print "Projected total cash back earned after making this purchase under the category " + purchase.tag + " : $" + str(self.rewards_cash_back + projected_cash_back)
         return self.rewards_cash_back + projected_cash_back
-        
-    ############WORK ON THIS##################    
-    def analyze_points_info_from_purchase(self, pruchase):
+           
+    def analyze_points_info_from_purchase(self, purchase):
         print "Current Rewards Pre-Purchase " + str(round(self.rewards_points, 2))
-        print "Projected Rewards from this purchase " + str(self.theoretical_rewards_from_purchase(purchase))
-        print "Rewards post purchase based on projection " + str(self.theoretical_rewards_from_purchase(purchase))
-
-    ############WORK ON THIS##################    
-    def analyze_cash_back_info_from_purchase(self, pruchase):
+        print "Projected Rewards from this purchase " + str(self.theoretical_points_from_purchase(purchase))
+        print "Rewards post purchase based on projection " + str(self.theoretical_points_post_purchase(purchase))
+   
+    def analyze_cash_back_info_from_purchase(self, purchase):
         print "Current Rewards Pre-Purchase " + str(round(self.rewards_points, 2))
-        print "Projected Rewards from this purchase " + str(self.theoretical_rewards_from_purchase(purchase))
-        print "Rewards post purchase based on projection " + str(self.theoretical_rewards_from_purchase(purchase))
+        print "Projected Rewards from this purchase " + str(self.theoretical_cash_back_from_purchase(purchase))
+        print "Rewards post purchase based on projection " + str(self.theoretical_cash_back_post_purchase(purchase))
     
     def print_rewards(self):
         if self.rewards_points != None: print "with " + str(round(self.rewards_points)) +" points"
@@ -204,21 +203,34 @@ class credit_card(object):
                 print str(key) + " = " + str(self.rewards_special_items_cash_back_rates[key])
         
     def get_rewards_info(self):
-        self.get_card_info()
+        #self.get_card_info()
         print "rewards_type = " + self.rewards_type
         print "rewards: ",
         self.print_rewards()
         self.print_rewards_special_items()
         print
-
-    ############WORK ON THIS##################
+    '''
     def apply_a_purchase(self, purchase):
-        self.update_balance(self.balance+purchase.price)        
+        print "Current card balance = " + str(self.balance)
+        print "Purchase Description: " + purchase.product_description
+        self.update_balance(self.balance+purchase.get_purchase_price())       
         if None != self.rewards_type: 
-            if "points" == self.rewards_type:
-                ##WORK ON THIS #############
-                pass                
-        
+            if "Points" in self.rewards_type:
+                self.analyze_points_info_from_purchase(purchase)
+                self.rewards_points = self.theoretical_cash_back_post_purchase(purchase)
+            if "Cash Back" in self.rewards_type:
+                self.analyze_cash_back_info_from_purchase(purchase)
+                self.rewards_cash_back = self.theoretical_cash_back_post_purchase(purchase)
+                self.update_balance(self.balance-self.theoretical_cash_back_from_purchase(purchase))
+            self.print_rewards() 
+        print "New card balance = " + str(self.balance)  
+    '''
+    def is_feasible_purchase(self, purchase):
+        if purchase.get_purchase_price()+self.balance <= self.credit_limit:
+            return True
+        return False
+    
+############WORK ON THIS##################
     def apply_a_payment(self, payment = None):
         if payment == None: payment = self.get_min_monthly_payment()
         self.update_balance(self.balance - 1.*payment)

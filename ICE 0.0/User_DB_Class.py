@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ###
 ### User_DB.py
 ### DataBase to store user account information
@@ -8,37 +9,86 @@
 ### user_db value = User_Class (class object representing a user)
 ###
 
-
-import User_Class
-
+import os, pickle
+import Credit_Card_Class_w_Rwrds 
+from User_Class import user
 
 class user_db(object):
     """
     Represents the database containing user accounts.
     """
 
-    def __init__(self, db = None):
-        self.index = {}
-        if None != db : self.index = db
+    def __init__(self, index = {}):
+        self.index = index
         
-
-    def _add_to_index(self, username):
+    def add_user_to_index(self, new_user = None):
         """Add keyword to the index on url."""
-        if username in self.index.keys():
-            return "user name already exists"
-        else:
-            #self.index[User_Class.user.username]
-            pass
+        if new_user == None:
+            new_user = user(raw_input("Enter your first and last name seperated by a space: "), raw_input("Enter your username: "), raw_input("Enter your password: "))    
+        while new_user.username in self.index.keys():
+            print "user name already exists"            
+            new_user.username = raw_input("Enter a different username: ")
+        self.index[new_user.username] = new_user
+        self.index[new_user.username].set_reward_structure_preference()
+        print "user created"
 
-    def add_user(self, url, content, outlinks):
-        """Add the url, content, and outlinks to the index."""
-        words = content.split()
-        for word in words:
-            self._add_to_index(word, url)
-        self.graph.add_node(url)
-        for target in outlinks:
-            self.graph.add_node(target)
-            self.graph.add_edge(url, target)
+    def delete_user_from_index(self, username):
+        if username in self.index.keys():
+            self.index[username] = None
+    
+    def Main_Menu(self):  
+        os.system('cls')
+        
+        print """
+        ========================================
+        ICE – INTELLIGENT CARD ENGINE
+        ========================================
+        1 - Sign In                                             
+        2 - Create Account
+        3 - Help
+        4 - Exit
+        ================================
+        """
+        choice = None
+        choice = raw_input("Enter a choice and press enter:  ")
+        
+        while None == choice or choice != "4":    
+            if choice == "1":
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print '\n'*100 #for now while non-windows executable
+                num_attempts = 0
+                username = raw_input("Enter a username and press enter:  ")
+                password = raw_input("Enter your password and press enter:  ")
+                if username not in self.index.keys():
+                    print "username doesn't exist, choose option 2 - Create Account from Main Menu"
+                    return self.Main_Menu()
+                else: 
+                    while num_attempts < 6:
+                        if password == self.index[username].password:
+                            self.index[username].user_menu()
+                            break
+                        else: 
+                            num_attempts += 1
+                            print"locked_out, goodbye"
+                #choice = Menu() 
+            elif choice == "2":
+                os.system('cls' if os.name == 'nt' else 'clear')
+                new_user = user(raw_input("Enter your first and last name seperated by a space: "), raw_input("Enter your username: "), raw_input("Enter your password: "))    
+                while new_user.username in self.index.keys():
+                    print "user name already exists"            
+                    new_user.username = raw_input("Enter a different username: ")
+                self.index[new_user.username] = new_user
+                self.index[new_user.username].set_reward_structure_preference()
+                self.index[new_user.username].user_menu() 
+                return self.Main_Menu()
+            elif choice == "3":
+                os.system('cls')
+                self.Help()
+                #choice = Menu()
+            elif choice == "4":
+                break   
+                
+        return "Thanks for using your Intellegent Credit Engine"
 
     def _compute_ranks(self, d = 0.8, numloops = 10):
         """Compute page ranks for the input web index.  d is the damping factor."""

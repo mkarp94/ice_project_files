@@ -12,12 +12,14 @@
 ###
 import datetime, os, pickle
 import Credit_Card_Class_w_Rwrds
-import User_DB_Class
-import Main_Menu
+
+#import Main_Menu
+from Purchase_Class import purchase
+
 #from User_Menu import user_menu
 
 class user(object):
-    def __init__(self, name, username, password):
+    def __init__(self, name, username, password, reward_structure_preference = "minimize interest paid"):
         """create a person called name"""
         self.name = name
         self.birthday = None #to be filled in later
@@ -26,7 +28,9 @@ class user(object):
         self.username = username
         self.password = password
         self.wallet = {}
-        self.reward_structure_preference = None
+        self.reward_structure_preference = reward_structure_preference #("Minimize interest paid, Maximize Points, Minimize % credit used per card)
+        self.transaction_id = 0
+        self.transactions = {}    
     
     def getLastName(self):
         """return self's last name"""
@@ -61,6 +65,16 @@ class user(object):
     def update_password(self, new_password):
         self.password = new_password
            
+    def get_reward_structure_preference(self):
+        return self.reward_structure_preference
+    def set_reward_structure_preference(self):
+        print "default credit optimization set to minimize interest"
+        print "Enter 0 to exit and retain default or"
+        print "Enter 1 to change optimization preference to maximize points"
+        choice = raw_input()
+        if choice == "0": return
+        else: self.reward_structure_preference = "maximize points"
+
     def get_wallet(self):
         return self.wallet
     def update_wallet(self, new_wallet):
@@ -126,14 +140,86 @@ class user(object):
         #compare purchase keyword with those keywords of the cards for rewards and return the card with better user_preference
         #use rewards to test rewards based on preferences
         #use wallet for to drill down on cards
-        pass
+        #Minimize interest paid, Maximize Points, maximize cash back, Minimize % credit used per card
+        card_array = [card for card in  self.wallet.keys() if self.wallet[card].is_feasible_purchase(purchase)]
+        points_card_array = [card for card in card_array if "Points" in self.wallet[card].rewards_type and (self.wallet[card].rewards_points_base_rate != None or purchase.tag not in self.wallet[card].rewards_special_items_points_rates.keys())]
+        #cash_back_card_array = [card for card in card_array if "Cash Back" in self.wallet[card].rewards_type and (self.wallet[card].rewards_cash_back_base_rate != None or purchase.tag not in self.wallet[card].rewards_special_items_cash_back_rates.keys())]
+        if len(self.wallet.keys()) == 0: 
+            print "no cards in the account"
+            return None
+        elif len(card_array) == 0: 
+            print "no feasible cards to use"
+            return None
+        elif len(card_array) == 1: 
+            return self.wallet[card_array[0]] 
+        else: 
+            if "minimize interest paid" == self.reward_structure_preference or len(points_card_array)==0:#and len(cash_back_card_array)==0):
+                card_last4_interest_dict = {}
+                for card in self.wallet.keys():
+                    card_last4_interest_dict[card] = self.wallet[card].annual_interest_rate
+                card_last4_interest_tuple = min(card_last4_interest_dict.items(), key=lambda x: x[1])
+                print card_last4_interest_tuple
+                return self.wallet[card_last4_interest_tuple[0]] 
+            #WORK ON THIS
+            elif "maximize points" == self.reward_structure_preference:
+                if len(points_card_array) == 1: return self.wallet[points_card_array[0]] 
+                else:
+                    card_last4_max_points_dict = {}
+                    for card in self.wallet.keys():
+                        card_last4_max_points_dict[card] = self.wallet[card].theoretical_points_from_purchase(purchase)
+                    card_last4_max_points_tuple = max(card_last4_max_points_dict.items(), key=lambda x: x[1])
+                    print card_last4_max_points_tuple
+                    return self.wallet[card_last4_max_points_tuple[0]] 
+            #elif "maximize cash back" == self.reward_structure_preference:
+                #if len(cash_back_card_array) == 1: return self.wallet[cash_back_card_array[0]] 
+                #else:
+                    #max_cash_back_card = cash_back_card_array[0]
+                    #for i in range(1, len(cash_back_card_array)):
+                        #if self.wallet[cash_back_card_array[i]].theoretical_cash_back_from_purchase(purchase) > self.wallet[max_cash_back_card].theoretical_cash_back_from_purchase(purchase):
+                            #max_cash_back_card = cash_back_card_array[i]
+                        #return self.wallet[cash_back_card_array[max_cash_back_card]] 
+            #elif "minimize % credit used per card" == self.reward_structure_preference:
+                #W0RK on this#W0RK on this#W0RK on this#W0RK on this#W0RK on this#W0RK on this#W0RK on this#W0RK on this
+                pass
+                '''
+	        if len(card_array) == 1: return self.wallet[cash_back_card_array[0]] 
+                else:
+                    max_cash_back_card = cash_back_card_array[0]
+                    for i in range(1, len(cash_back_card_array)):
+                        if self.wallet[cash_back_card_array[i]].theoretical_cash_back_from_purchase(purchase) > self.wallet[max_cash_back_card].theoretical_cash_back_from_purchase(purchase):
+                            max_cash_back_card = cash_back_card_array[i]
+                        return self.wallet[cash_back_card_array[max_cash_back_card]] 
+                '''
+        
 
     #choose best card given user preferenece and apply purchase to balances and display renewed financial report for both the card used and the aggregate
-    def apply_purchase_user_rewards(self, purchase = None, optimal_card = None):
+    def apply_purchase_user_rewards(self, purchase):
         #display post purchase card specific financial information and rewards as well as aggregate financial report and rewards 
         #use wallet for to drill down on cards
-        pass
-            
+        optimal_card = self.choose_optimal_card(purchase)
+        if optimal_card == None:
+            print "no feasible cards for purchase"
+            return
+        else:
+            optimal_card.get_card_info()  
+            print "Current card balance = " + str(optimal_card.balance)
+            print "Purchase Description: " + purchase.product_description
+            self.wallet[optimal_card.last4digits].update_balance(optimal_card.balance+purchase.get_purchase_price())       
+            if None != optimal_card.rewards_type: 
+                if "Points" in optimal_card.rewards_type:
+                    optimal_card.analyze_points_info_from_purchase(purchase)
+                    self.wallet[optimal_card.last4digits].rewards_points = optimal_card.theoretical_points_post_purchase(purchase)
+                if "Cash Back" in optimal_card.rewards_type:
+                    optimal_card.analyze_cash_back_info_from_purchase(purchase)
+                    self.wallet[optimal_card.last4digits].rewards_cash_back = optimal_card.theoretical_cash_back_post_purchase(purchase)
+                    self.wallet[optimal_card.last4digits].update_balance(self.balance-optimal_card.theoretical_cash_back_from_purchase(purchase))
+                self.wallet[optimal_card.last4digits].print_rewards() 
+            self.transaction_id += 1
+            self.transactions[self.transaction_id] = [purchase, optimal_card.last4digits]              
+            print "New card balance = " + str(self.wallet[optimal_card.last4digits].balance)  
+            self.get_aggregate_card_financial_report()
+            raw_input()
+
     def user_menu(self):
         '''
         ICE_User_DBtest = {}
@@ -150,42 +236,59 @@ class user(object):
         ========================================
         ICE – INTELLIGENT CARD ENGINE
         ========================================
-        1 - Add a credit card to your account
-        2 - Update a credit card in your account
+        1 - Add a Credit Card to your account
+        2 - Update a Credit Card in your account
         3 - Display Credit Card Information
         4 - Display Credit Report Options
-        5 - Delete a credit card from your account
-        6 - Export listing to CSV
-        7 - Exit
+        5 - Delete a Credit Card from your account
+        6 - Run Credit Optimizer
+        7 - Make a Purchase
+        8 - Export account data to CSV
+        9 - Exit
         ================================
         """
         choice = raw_input("Enter a choice and press enter:  ")
     
-        while choice != "7":    
+        while choice != "9":    
             if choice == "1":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 self.add_card_to_wallet()
                 #choice = self.user_menu()
+                raw_input()
             elif choice == "2":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 self.update_card_in_wallet()
+                raw_input()
                 #choice = self.user_menu()
             elif choice == "3":
                 os.system('cls')
                 self.display_cards_in_wallet()
+                raw_input()
                 #choice = self.user_menu()
             elif choice == "4":
                 self.display_financial_reports()
+                raw_input()
                 #choice = self.user_menu()
             elif choice == "5":
-                csvreport_reports.Write_Card_to_CSV()
+                last4digits = raw_input("last 4 digits of card you'd like to delete: ")
+                self.wallet[last4digits] = None
+                raw_input()
                 #choice = self.user_menu()
             elif choice == "6":
+                #run optimizer on a given purchase, at close of analysis ask if user would like to apply the purchase
+                self.run_optimizer()
+                raw_input()
+            elif choice == "7":
+                #allow a user to enter a purchase and have it added under the user specified optimization
+                new_purchase = purchase(raw_input("purchase category: "), raw_input("unit price: "), raw_input("units: "),raw_input("company: "),raw_input("description: "))
+                self.apply_purchase_user_rewards(new_purchase)
+                raw_input()
+            elif choice == "8":
                 csvreport_reports.Write_Card_to_CSV()
                 #choice = self.user_menu()
-            elif choice == "7":
+            elif choice == "9":
                 '''
                 try:
                     with open(fname, 'w') as fout:
@@ -194,10 +297,11 @@ class user(object):
                 except IOError, e:
                     print "Error writing file: " + str(e)
                 '''
-                return "Signed Out"
-            choice = raw_input("Enter a choice and press enter:  ")
-            #return 
-    
+                print "Signed Out"
+                return
+            #choice = raw_input("Enter a choice and press enter:  ")
+            return self.user_menu()
+        
     #TAKE USER INPUT AND RUN FUNCTION TO INSERT Credit Card into user account
     def add_card_to_wallet(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -441,6 +545,7 @@ class user(object):
                 #choice = self.update_card_in_wallet(last4digits)
             
             elif choice == "2":
+                raw_input()
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 if None != self.wallet[last4digits].rewards_type:
@@ -464,6 +569,7 @@ class user(object):
 
             
             elif choice == "4":
+                raw_input()
                 os.system('cls')
                 if None != self.wallet[last4digits].rewards_type:
                     if "Points" in self.wallet[last4digits].rewards_type: 
@@ -478,6 +584,7 @@ class user(object):
                 
             
             elif choice == "5":
+                raw_input()
                 os.system('cls')
                 if None != self.wallet[last4digits].rewards_type:
                     updated_rewards_cash_back = None
@@ -488,6 +595,7 @@ class user(object):
                     self.wallet[last4digits].update_rewards_cash_back(updated_rewards_cash_back)
             
             elif choice == "6":
+                raw_input()
                 os.system('cls')
                 if None != self.wallet[last4digits].rewards_type:
                     updated_rewards_cash_back_base_rate = None
@@ -499,6 +607,7 @@ class user(object):
                     self.wallet[last4digits].update_rewards_cash_back_base_rate(updated_rewards_cash_back_base_rate)
             
             elif choice == "7":
+                raw_input()
                 os.system('cls')
                 if None != self.wallet[last4digits].rewards_type:
                     if "Cash Back" in self.wallet[last4digits].rewards_type: 
@@ -559,6 +668,7 @@ class user(object):
     
         while choice != "11":    
             if choice == "1":
+                raw_input()
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 new_company = None
@@ -591,6 +701,7 @@ class user(object):
                 #choice = self.update_card_in_wallet(last4digits)
             
             elif choice == "2":
+                raw_input()
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 updated_last4digits = None  
@@ -601,6 +712,7 @@ class user(object):
                 #choice = self.update_card_in_wallet(updated_last4digits)
             
             elif choice == "3":
+                raw_input()
                 os.system('cls')
                 new_expiration_date = None
                 while None == new_expiration_date or len(new_expiration_date) != 5: 
@@ -609,6 +721,7 @@ class user(object):
                 #choice = self.update_card_in_wallet(last4digits)
             
             elif choice == "4":
+                raw_input()
                 os.system('cls')
                 new_bank = None
                 if self.wallet[last4digits].credit_card_company != "American Express":
@@ -816,25 +929,26 @@ class user(object):
                     last4digits = raw_input("Please enter the last 4 digits of the card's financials you'd like to view: ")
                 self.wallet[last4digits].get_card_financial_report()
                 choice = self.display_financial_reports()
-            
+                raw_input()
             elif choice == "2":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print '\n'*100
                 for key in self.wallet.keys(): 
                     self.wallet[key].get_card_financial_report()
                 choice = self.display_financial_reports()
-            
+                raw_input()
             elif choice == "3":
                 os.system('cls')
                 self.get_aggregate_card_financial_report()
                 #choice = self.display_financial_reports()
-                
+                raw_input()
                 
             elif choice == "4":
                 os.system('cls')
                 self.wallet[last4digits].update_bank(new_bank)
                 choice = self.display_financial_reports()
-            
+                raw_input()
+                
             elif choice == "5":
                 os.system('cls')
                 new_annualInterestRate = None
@@ -843,7 +957,7 @@ class user(object):
                     new_annualInterestRate = float(new_annualInterestRate)
                 self.wallet[last4digits].update_annual_interest_rate(new_annualInterestRate)
                 choice = self.display_financial_reports()   
-            
+                raw_input()
             elif choice == "6":
                 os.system('cls')
                 new_credit_limit = None
@@ -852,7 +966,7 @@ class user(object):
                     new_credit_limit  = float(new_credit_limit)
                 self.wallet[last4digits].update_credit_limit(new_credit_limit)
                 choice = self.display_financial_reports()
-            
+                raw_input()
             elif choice == "7":
                 print "Exiting Financial Reporting Menu."
                 '''                

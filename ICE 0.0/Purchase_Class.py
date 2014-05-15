@@ -6,6 +6,7 @@ class purchase(object):
         self.quantity = quantity
         self.producer_company = company
         self.product_description = product_description
+        self.purchase_id = None
         
     def get_tag(self):
         return self.tag
@@ -48,7 +49,7 @@ class purchase(object):
        print "This purchase includes " + str(self.quantity) + " " + self.product_description
        print "The purchase price is " + str(round(self.get_purchase_price(), 2))
        print
-
+'''
 Apple_Ipad = purchase("consumer electronics", 499.00, 1, "apple", "top rated tablet computer")
 print 2*Apple_Ipad.get_purchase_price()
 print Apple_Ipad.get_purchase_info()
@@ -57,3 +58,4 @@ Google_Nexus.update_producer_company("Google")
 Google_Nexus.update_unit_price(399.00)
 print Google_Nexus.get_purchase_info()
 print Apple_Ipad.get_purchase_info()
+'''
